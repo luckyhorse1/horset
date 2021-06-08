@@ -1,5 +1,8 @@
 set(NET_SRCS
         EventLoop.cpp
+        Poller.cpp
+        Channel.cpp
+        poller/PollPoller.cpp
 )
 
 add_library(horset_net ${NET_SRCS})

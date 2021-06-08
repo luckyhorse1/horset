@@ -1,5 +1,10 @@
 #include "horset/net/EventLoop.h"
+#include "horset/net/Channel.h"
 #include <thread>
+#include <sys/timerfd.h>
+#include <cstring> // bzero
+#include <unistd.h> // close
+#include <iostream>
 
 EventLoop* gLoop;
 
@@ -18,6 +23,29 @@ void testOneLoopPerThread() {
     EventLoop loop2;
 }
 
+void timeout() {
+    std::cout<<"timeout!"<<std::endl;
+    gLoop->quit();
+}
+
+void testReactor() {
+    EventLoop eventLoop;
+    gLoop = &eventLoop;
+
+    int timeFd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK| TFD_CLOEXEC);
+    Channel channel(&eventLoop, timeFd);
+    channel.setReadCallback(timeout);
+    channel.enableReading();
+
+    struct itimerspec t;
+    bzero(&t, sizeof(t));
+    t.it_value.tv_sec = 5;
+    ::timerfd_settime(timeFd, 0, &t, NULL);
+
+    eventLoop.loop();
+    ::close(timeFd);
+}
+
 int main() {
-    testLoopNotInIO();
+    testReactor();
 }
