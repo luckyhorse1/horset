@@ -1,11 +1,12 @@
 #include "EventLoop.h"
 #include "poller/PollPoller.h"
 #include "horset/base/CurrentThread.h"
-#include <iostream>
+#include "TimerQueue.h"
 
 __thread EventLoop *self = NULL;
 
-EventLoop::EventLoop() : tid(CurrentThread::tid()), poller_(Poller::newDefaultPoller()) {
+EventLoop::EventLoop() : tid(CurrentThread::tid()), poller_(Poller::newDefaultPoller()),
+                         timerQueue_(new TimerQueue(this)) {
     if (self) {
         std::cerr << "already has a event loop" << std::endl;
     } else {
@@ -14,9 +15,7 @@ EventLoop::EventLoop() : tid(CurrentThread::tid()), poller_(Poller::newDefaultPo
 }
 
 void EventLoop::loop() {
-    if (CurrentThread::tid() != tid) {
-        std::cerr << "loop not in io thread" << std::endl;
-    }
+    assertInLoopThread();
     quit_ = false;
     while (!quit_) {
         activeChannels.clear();
@@ -29,5 +28,20 @@ void EventLoop::loop() {
 
 void EventLoop::updateChannel(Channel *channel) {
     poller_->updateChannel(channel);
+}
+
+void EventLoop::runInLoop(Functor cb) {
+    if (isInLoopThread()) {
+        cb();
+    }
+}
+
+void EventLoop::runAt(Timestamp time, TimerCallback cb) {
+    return timerQueue_->addTimer(std::move(cb), time);
+}
+
+void EventLoop::runAfter(double delay, TimerCallback cb) {
+    Timestamp time(addTime(Timestamp::now(), delay));
+    return runAt(time, std::move(cb));
 }
 

@@ -1,5 +1,6 @@
 set(BASE_SRCS
         CurrentThread.cpp
+        Timestamp.cpp
 )
 
 add_library(horset_base ${BASE_SRCS})

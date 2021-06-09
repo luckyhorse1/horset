@@ -6,12 +6,13 @@
 #include <unistd.h> // close
 #include <iostream>
 
-EventLoop* gLoop;
+EventLoop *gLoop;
 
 void func() {
     EventLoop loop;
     gLoop = &loop;
 }
+
 void testLoopNotInIO() {
     std::thread t(func);
     t.join();
@@ -24,7 +25,7 @@ void testOneLoopPerThread() {
 }
 
 void timeout() {
-    std::cout<<"timeout!"<<std::endl;
+    std::cout << "timeout!" << std::endl;
     gLoop->quit();
 }
 
@@ -32,7 +33,7 @@ void testReactor() {
     EventLoop eventLoop;
     gLoop = &eventLoop;
 
-    int timeFd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK| TFD_CLOEXEC);
+    int timeFd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
     Channel channel(&eventLoop, timeFd);
     channel.setReadCallback(timeout);
     channel.enableReading();
@@ -46,6 +47,19 @@ void testReactor() {
     ::close(timeFd);
 }
 
+void timerCallback() {
+    EventLoop loop;
+    std::cout << "timer call back" << std::endl;
+    gLoop->quit();
+}
+
+void testTimerQueue() {
+    EventLoop loop;
+    gLoop = &loop;
+    loop.runAfter(2.0, timerCallback);
+    loop.loop();
+}
+
 int main() {
-    testReactor();
+    testTimerQueue();
 }
