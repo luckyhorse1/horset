@@ -60,6 +60,18 @@ void testTimerQueue() {
     loop.loop();
 }
 
+void func2() {
+    gLoop->runInLoop([] { std::cout << "run in loop" << std::endl; });
+}
+
+void testRunInLoop() {
+    EventLoop loop;
+    gLoop = &loop;
+    std::thread t(func2);
+    t.join();
+    loop.loop();
+}
+
 int main() {
-    testTimerQueue();
+    testRunInLoop();
 }

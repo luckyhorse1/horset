@@ -3,11 +3,14 @@
 #include <vector>
 #include <functional>
 #include <iostream>
-#include "../base/CurrentThread.h"
-#include "../base/Timestamp.h"
+#include "horset/base/CurrentThread.h"
+#include "horset/base/Timestamp.h"
+#include "horset/base/Mutex.h"
 
 class Poller;
+
 class Channel;
+
 class TimerQueue;
 
 class EventLoop {
@@ -21,7 +24,7 @@ public:
 
     void updateChannel(Channel *channel);
 
-    void quit() { quit_ = true; }
+    void quit();
 
     void runInLoop(Functor cb);
 
@@ -35,14 +38,27 @@ public:
         }
     }
 
+    void wakeup();
+
 private:
     typedef std::vector<Channel *> ChannelList;
 
     bool isInLoopThread() { return CurrentThread::tid() == tid; }
 
+    void queueInLoop(Functor cb);
+
+    void handleRead();
+    void doPendingFunctors();
+
     int tid;
+    bool callingPendingFunctors_;
     Poller *poller_;
     TimerQueue *timerQueue_;
+    int wakeupFd_;
+    Channel *wakeupChannel_;
     ChannelList activeChannels;
     bool quit_ = false;
+    MutexLock mutex_;
+    std::vector<Functor> pendingFunctors_;
+
 };
