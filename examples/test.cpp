@@ -1,12 +1,14 @@
 #include "horset/net/EventLoop.h"
 #include "horset/net/Channel.h"
 #include "horset/net/Acceptor.h"
+#include "horset/net/TcpServer.h"
 #include <thread>
 #include <sys/timerfd.h>
 #include <cstring> // bzero
 #include <unistd.h> // close
 #include <iostream>
 #include <netinet/in.h>
+#include <memory> // shared_ptr
 
 EventLoop *gLoop;
 
@@ -74,23 +76,29 @@ void testRunInLoop() {
     loop.loop();
 }
 
-void func3(int sockfd, struct sockaddr_in addr) {
+void func3(int sockfd, InetAddress& address) {
     ::write(sockfd, "how are you!\n", 13);
 }
 
 void testAcceptor() {
     EventLoop loop;
-    struct sockaddr_in addr;
-    std::memset(&addr, 0, sizeof addr);
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htobe32(INADDR_ANY);
-    addr.sin_port = htobe16(8892);
+    InetAddress addr(8892);
     Acceptor acceptor(&loop, addr);
     acceptor.setNewConnectionCallback(func3);
     acceptor.listen();
     loop.loop();
 }
 
+void testTcpServer() {
+    EventLoop loop;
+    InetAddress addr(8892);
+    TcpServer tcpServer(&loop, addr);
+    tcpServer.setConnectionCallback(
+            [](const TcpConnectionPtr &connection) { std::cout << "connection created" << std::endl; });
+    tcpServer.start();
+    loop.loop();
+}
+
 int main() {
-    testAcceptor();
+    testTcpServer();
 }

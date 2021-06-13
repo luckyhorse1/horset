@@ -5,6 +5,9 @@ set(NET_SRCS
         Timer.cpp
         TimerQueue.cpp
         Acceptor.cpp
+        InetAddress.cpp
+        TcpServer.cpp
+        TcpConnection.cpp
         poller/PollPoller.cpp
 )
 

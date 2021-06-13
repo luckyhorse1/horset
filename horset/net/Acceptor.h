@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Channel.h"
+#include "InetAddress.h"
 
 class Acceptor {
 public:
-    typedef std::function<void(int sockfd, struct sockaddr_in)> NewConnectionCallback;
+    typedef std::function<void(int sockfd, InetAddress& address)> NewConnectionCallback;
 
-    Acceptor(EventLoop *loop, struct sockaddr_in &addr);
+    Acceptor(EventLoop *loop, const InetAddress &addr);
 
     void setNewConnectionCallback(const NewConnectionCallback &cb) { newConnectionCallback_ = cb; }
 
